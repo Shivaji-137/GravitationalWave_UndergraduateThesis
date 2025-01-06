@@ -1,0 +1,142 @@
+\documentclass[12pt]{report}
+\usepackage{geometry}
+\geometry{a4paper, left=3cm, right=2cm, top=2.5cm, bottom=2.5cm}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{newtxtext,newtxmath}
+\usepackage[numbers]{natbib}
+\usepackage[hidelinks]{hyperref}
+\usepackage{setspace, float}
+\usepackage{caption, subcaption}
+\usepackage[symbol]{footmisc}
+\usepackage{amsmath}
+\usepackage{multicol}
+\usepackage{tocloft}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{setspace, float}
+\usepackage{url}
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{english}
+\setotherlanguages{sanskrit, nepali} 
+% % \onehalfspacing
+% %% or other languages
+\newfontfamily\devanagarifont[Script=Devanagari]{Lohit Devanagari}
+\newfontfamily\nepalifont[Script=Devanagari,AutoFakeBold=2.5]{Noto Sans Devanagari}
+
+%languages and font
+% \usepackage{fontspec}
+% \usepackage{polyglossia}
+% \setmainlanguage{english}
+% \setotherlanguages{sanskrit, nepali} %% or other languages
+
+% \newfontfamily\devanagarifont[Script=Devanagari]{FreeSans}
+% \newfontfamily\nepalifont[Script=Devanagari]{FreeSerif}
+
+\usepackage{titlesec}
+
+\titleformat{\chapter}[display]
+{\centering\normalfont\fontsize{16}{20}\bfseries}
+{\MakeUppercase{\chaptername}\ \thechapter} % This capitalizes only "Chapter 1"
+{20pt}
+{\fontsize{14}{18}\selectfont}
+
+% Customize section title font
+\titleformat{\section}
+{\normalfont\fontsize{12}{15}\bfseries}{\thesection}{1em}{}
+
+% Customize subsection title font
+\titleformat{\subsection}
+{\normalfont\fontsize{12}{15}\bfseries}{\thesubsection}{1em}{}
+
+\definecolor{comment}{HTML}{2E8B57} % Color for comments
+
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    commentstyle=\color{comment},
+    showstringspaces=false,
+    frame=single,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+    backgroundcolor=\color{lightgray}
+}
+
+
+% \renewcommand{\listfigurename}{LIST OF FIGURES}
+
+\begin{document}
+\onehalfspacing
+\input{frontpage}
+
+\pagenumbering{roman}
+\pagestyle{plain}
+
+\input{Recomm}
+\input{Declaration (1)}
+\input{LOF}
+\input{COA}
+\input{Acknow}
+\input{Abstract}
+% \input{thanksto}
+\input{abbre}
+
+\input{Symbols}
+\newpage
+\newcommand{\centerlistoffigures}{
+\begin{center}
+    \bfseries
+    \fontsize{16}{18}\selectfont
+    LIST OF FIGURES
+\end{center}
+}
+
+\renewcommand{\listfigurename}{\centerlistoffigures} % Use the new command for the title
+
+\addcontentsline{toc}{chapter}{\normalfont List of Figures}
+\listoffigures
+
+% \renewcommand{\listfigurename}{LIST OF FIGURES}
+% \addcontentsline{toc}{chapter}{\normalfont List of Figures}
+% \listoffigures
+
+\newpage
+\tableofcontents
+\thispagestyle{empty}
+\pagenumbering{arabic}
+
+
+\newpage
+\setcounter{page}{1}
+%Introduction section...................................
+\setlength{\parskip}{6.5pt}
+\input{introduction}
+% \input{motivation}
+\newpage
+
+\chapter{THEORETICAL BACKGROUND AND LITERATURE REVIEW}
+
+\input{theoreticalbackground}
+
+\input{literaturereview}
+
+\newpage
+
+\input{methodology}
+\newpage
+
+\input{expectedresult}
+
+\input{conclusionRecommen}
+\newpage
+\renewcommand{\bibname}{REFERENCES}
+\bibliographystyle{apalike}
+\addcontentsline{toc}{chapter}{References}
+\bibliography{bibliography}
+
+\input{Appendix}
+\end{document}

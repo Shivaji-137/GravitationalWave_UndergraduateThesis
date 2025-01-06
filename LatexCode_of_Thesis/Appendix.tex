@@ -1,0 +1,158 @@
+\appendix
+\renewcommand{\thesection}{\Alph{section}.}
+
+\chapter*{APPENDIX}
+\addcontentsline{toc}{chapter}{\textbf{APPENDIX}}
+\onehalfspacing
+
+
+\section{Python Implementation for Strain, ASD and Qtransform plot}
+\label{code1}
+
+\begin{lstlisting}[language=Python, caption=Preprocessing Implementation in python]
+""
+Written By
+    Shivaji Chaulagain
+""
+from gwosc import datasets
+from gwpy.timeseries import TimeSeries, TimeSeriesDict
+from matplotlib import pyplot as plt
+from pycbc.waveform import get_td_waveform, fd_approximants
+import numpy as np
+from scipy import signal as sc
+
+class GWanalysis:
+  def __init__(self, eventname, duration):
+    self.eventname = eventname
+    self.duration = duration
+    self.gps = datasets.event_gps(eventname)
+    self.segment = (int(self.gps)-self.duration/2, int(self.gps)+self.duration/2)
+    self.ldata = TimeSeries.fetch_open_data("L1", *self.segment, cache=True)
+    self.hdata = TimeSeries.fetch_open_data("H1", *self.segment, cache=True)
+    self.vdata = TimeSeries.fetch_open_data("V1", *self.segment, cache=True)
+  # plot strain data of given duration.
+  def straindataplot(self):
+    combined = TimeSeriesDict()
+    combined['L1'] = self.ldata
+    combined['H1'] = self.hdata
+    combined['V1'] = self.vdata
+    plot = combined.plot(figsize=(12, 10), separate=True, sharex=True)
+    ax1, ax2, ax3 = plot.axes
+    ax1.set_title(f'LIGO-Hanford-Virgo strain data around {self.eventname} of duration {self.duration}s')
+    ax1.set_ylabel('Amplitude [strain]', y=-0.5)
+    ax1.lines[0].set_color('blue')
+    ax2.lines[0].set_color('green')
+    ax3.lines[0].set_color('red')
+    ax1.legend()
+    ax2.legend()
+    ax3.legend()
+    ax2.set_ylabel('')
+    ax3.set_ylabel('')
+    plot.savefig(f'{self.eventname}strain.png')
+  # plot the Amplitude Spectral density. More duration(s) better the resolution of frequency component
+  def asdplot(self, fftlength=4, method="median"):
+    asdl = self.ldata.asd(fftlength=fftlength, method="median")
+    asdh = self.hdata.asd(fftlength=fftlength, method="median")
+    asdv = self.vdata.asd(fftlength=fftlength, method="median")
+    lasd = asdl.plot()
+    ax = lasd.gca()
+    ax.set_xlim(10, 1400)
+    ax.set_ylim(1e-24, 1e-20)
+    ax.plot(asdh, label='LIGO-Hanford', color='gwpy:ligo-hanford')
+    ax.plot(asdv, label='Virgo', color='gwpy:virgo')
+
+    lline = ax.lines[0]
+    lline.set_color('gwpy:ligo-livingston')  
+    lline.set_label('LIGO-Livingston')
+
+    ax.set_ylabel(r'Strain noise [$1/\sqrt{\mathrm{Hz}}$]')
+    ax.set_title(f'ASD of each detector around {self.eventname}')
+    ax.legend(fontsize=7,loc='lower left')
+    plt.savefig(f'{self.eventname}asd.png', dpi=300, bbox_inches='tight')
+  # q-transform. I have kept duration of 32 second for signal
+  def qtransformplot(self, franges, qranges, outsegs=None):
+    if outsegs is not None:
+        o1, o2 = outsegs
+    ldata = TimeSeries.fetch_open_data("L1", int(self.gps)-30, int(self.gps)+2, cache=True)
+    hdata = TimeSeries.fetch_open_data("H1", int(self.gps)-30, int(self.gps)+2, cache=True)
+    vdata = TimeSeries.fetch_open_data("V1", int(self.gps)-30, int(self.gps)+2, cache=True)
+    if outsegs is None:
+        lq = ldata.q_transform(frange=franges, qrange=qranges)
+        hq = hdata.q_transform(frange=franges, qrange=qranges)
+        vq = vdata.q_transform(frange=franges, qrange=qranges)
+    else:
+        lq = ldata.q_transform(frange=franges, qrange=qranges, outseg=(self.gps-o1, self.gps+o2))
+        hq = hdata.q_transform(frange=franges, qrange=qranges, outseg=(self.gps-o1, self.gps+o2))
+        vq = vdata.q_transform(frange=franges, qrange=qranges, outseg=(self.gps-o1, self.gps+o2))
+    plot, axes = plt.subplots(nrows=3, sharex=True, figsize=(5, 10))
+    tax, qax, qax2 = axes
+    tax.imshow(lq)
+    qax.imshow(hq)
+    qax2.imshow(vq)
+    tax.set_title(f"Q-transform around {self.eventname}")
+    tax.set_ylabel('Frequency [Hz]', y=-0.5)
+    qax.set_ylabel('')
+    qax2.set_ylabel('')
+    qax2.set_xlabel('Time[seconds]')
+    tax.set_yscale('log')
+    qax.set_yscale('log')
+    qax2.set_yscale('log')
+    tick_positions = np.arange(-o1, o2, 0.4)
+    # tax.set_xticklabels([])
+    # qax.set_xticklabels([])
+    # qax2.set_xticklabels([])
+    tax.set_xticklabels([round(pos,2) for pos in tick_positions])
+    qax.set_xticklabels([round(pos,2) for pos in tick_positions])
+    qax2.set_xticklabels([round(pos,2) for pos in tick_positions])
+    # show the detector name in plot
+    tax.text(0.05, 0.95, 'LIGO-Livingston', transform=tax.transAxes, fontsize=7, verticalalignment='top', color='white')
+    qax.text(0.05, 0.95, 'LIGO-Hanford', transform=qax.transAxes, fontsize=7, verticalalignment='top', color='white')
+    qax2.text(0.05, 0.95, 'Virgo', transform=qax2.transAxes, fontsize=7, verticalalignment='top', color='white')
+    # hide gid
+    tax.grid(False)
+    qax.grid(False)
+    qax2.grid(False)
+    tax.colorbar(clim = (0,20),label='Normalised energy')
+    qax.colorbar(clim = (0,20))
+    qax2.colorbar(clim = (0,20))
+
+    plt.savefig(f'{self.eventname}_qtransform.png', dpi=300, bbox_inches='tight')
+    
+\end{lstlisting}
+\newpage
+\section{Python Implementation for Waveform Generation (Template)}
+\label{code2}
+
+For information about the conditioned variable, what the below code is and how it is obtained and the remaining code for whitening and template generation, see the following references in the gw-odw2023 GitHub repository: \url{https://github.com/gw-odw/odw-2023/blob/main/Tutorials/Day_2/Tuto_2.2_Matched_Filtering_In_action.ipynb}. Furthermore, about my work, see my github repository: \url{https://github.com/Shivaji-137}
+\subsection{GW190521}
+\begin{lstlisting}
+conditioned = strain.crop(2, 2) #obtained from strain data
+from pycbc.waveform import get_td_waveform
+hp, hc = get_td_waveform(approximant="IMRPhenomPv3HM",
+                     mass1=90,
+                     mass2= 65,
+                     distance = 4600,
+                     delta_t=conditioned.delta_t,
+                     f_lower=20)
+
+# Resize the vector to match our data
+hp.resize(len(conditioned))
+\end{lstlisting}
+\subsection{GW190814}
+\begin{lstlisting}
+from pycbc.waveform import get_td_waveform
+hp, hc = get_td_waveform(approximant="IMRPhenomPv2_NRTidal",
+                     mass1=2.36,
+                     mass2= 2.36,
+                     distance = 42,
+                     delta_t=conditioned.delta_t,
+                     f_lower=60)
+
+# Resize the vector to match our data
+hp.resize(len(conditioned))
+\end{lstlisting}
+ 
+
+
+
+
